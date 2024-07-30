@@ -1,6 +1,7 @@
-use std::{io, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
+use rfd::FileDialog;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
@@ -66,9 +67,19 @@ fn main() {
         .delimiter(b';')
         .has_headers(false)
         .from_path(args.input)
-        .expect("Failed to open file");
+        .expect("Failed to open file for reading");
 
-    let mut writer = csv::Writer::from_writer(io::stdout());
+    let Some(output_path) = FileDialog::new()
+        .set_file_name(format!(
+            "ynab-{}.csv",
+            chrono::Local::now().format("%Y-%m-%d-%H-%M-%S")
+        ))
+        .save_file()
+    else {
+        return;
+    };
+
+    let mut writer = csv::Writer::from_path(output_path).expect("Failed to open file for writing");
 
     for record in reader.deserialize::<Row>() {
         match record {
