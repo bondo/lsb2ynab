@@ -55,6 +55,26 @@ impl Serialize for Row {
     }
 }
 
+fn convert(reader: impl std::io::Read, writer: impl std::io::Write) {
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b';')
+        .has_headers(false)
+        .from_reader(reader);
+
+    let mut writer = csv::Writer::from_writer(writer);
+
+    for record in reader.deserialize::<Row>() {
+        match record {
+            Ok(record) => {
+                writer.serialize(record).expect("Should be writable");
+            }
+            Err(e) => {
+                eprintln!("Error: {e}");
+            }
+        }
+    }
+}
+
 #[derive(Parser, Debug)]
 struct Args {
     input: PathBuf,
@@ -63,11 +83,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let mut reader = csv::ReaderBuilder::new()
-        .delimiter(b';')
-        .has_headers(false)
-        .from_path(args.input)
-        .expect("Failed to open file for reading");
+    let reader = std::fs::File::open(args.input).expect("Failed to open file for reading");
 
     let Some(output_path) = FileDialog::new()
         .set_file_name(format!(
@@ -79,16 +95,25 @@ fn main() {
         return;
     };
 
-    let mut writer = csv::Writer::from_path(output_path).expect("Failed to open file for writing");
+    let writer = std::fs::File::create(output_path).expect("Failed to open file for writing");
 
-    for record in reader.deserialize::<Row>() {
-        match record {
-            Ok(record) => {
-                writer.serialize(record).expect("Should be writable");
-            }
-            Err(e) => {
-                eprintln!("Error: {e}");
-            }
-        }
+    convert(reader, writer);
+}
+
+mod tests {
+    #[test]
+    fn test_process_file() {
+        let input = r#"20-10-2021;Test;1.234,56;456,78;EUR
+15-01-2022;Test2;7,89;12,34;DKK
+"#;
+        let mut output = Vec::new();
+        super::convert(input.as_bytes(), &mut output);
+        assert_eq!(
+            String::from_utf8(output).unwrap(),
+            r#"Date,Payee,Memo,Amount
+2021-10-20,Test,,1234.56
+2022-01-15,Test2,,7.89
+"#
+        );
     }
 }
