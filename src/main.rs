@@ -64,34 +64,44 @@ fn convert(reader: impl std::io::Read, writer: impl std::io::Write) {
     let mut writer = csv::Writer::from_writer(writer);
 
     for record in reader.deserialize::<Row>() {
-        match record {
-            Ok(record) => {
-                writer.serialize(record).expect("Should be writable");
-            }
-            Err(e) => {
-                eprintln!("Error: {e}");
-            }
-        }
+        writer
+            .serialize(record.expect("Failed to parse row"))
+            .expect("Failed to write row");
     }
 }
 
 #[derive(Parser, Debug)]
 struct Args {
-    input: PathBuf,
+    /// Input file. If not provided, a file dialog will be shown.
+    input: Option<PathBuf>,
+
+    /// Output file. If not provided, a file dialog will be shown.
+    #[arg(short, long)]
+    output: Option<PathBuf>,
 }
 
 fn main() {
     let args = Args::parse();
 
-    let reader = std::fs::File::open(args.input).expect("Failed to open file for reading");
+    let Some(input_path) = args.input.or_else(|| {
+        FileDialog::new()
+            .set_title("Choose CSV export from LSB")
+            .add_filter("csv", &["csv"])
+            .pick_file()
+    }) else {
+        return;
+    };
 
-    let Some(output_path) = FileDialog::new()
-        .set_file_name(format!(
-            "ynab-{}.csv",
-            chrono::Local::now().format("%Y-%m-%d-%H-%M-%S")
-        ))
-        .save_file()
-    else {
+    let reader = std::fs::File::open(input_path).expect("Failed to open file for reading");
+
+    let Some(output_path) = args.output.or_else(|| {
+        FileDialog::new()
+            .set_file_name(format!(
+                "ynab-{}.csv",
+                chrono::Local::now().format("%Y-%m-%d-%H-%M-%S")
+            ))
+            .save_file()
+    }) else {
         return;
     };
 
