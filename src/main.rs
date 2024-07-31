@@ -71,6 +71,7 @@ fn convert(reader: impl std::io::Read, writer: impl std::io::Write) {
 }
 
 #[derive(Parser, Debug)]
+#[command(version, about)]
 struct Args {
     /// Input file. If not provided, a file dialog will be shown.
     input: Option<PathBuf>,

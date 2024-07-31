@@ -2,6 +2,7 @@
 name = "lsb2ynab"
 version = "0.1.0"
 edition = "2021"
+description = "Convert CSV files exported from Lån & Spar Bank to YNAB compatible CSV files."
 
 [dependencies]
 chrono = "0.4.38"
