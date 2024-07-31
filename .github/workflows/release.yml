@@ -1,27 +1,41 @@
 on:
   push:
     tags:
-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "v*"
 
 name: Create Release
 
 jobs:
   artifacts:
     name: Build for ${{ matrix.platform.os_name }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         platform:
           - os_name: Linux-x86_64
+            runner: ubuntu-latest
             target: x86_64-unknown-linux-musl
             bin: lsb2ynab
-            archive: tar -czf
+            archive_cmd: tar -czf
             archive_ext: tar.gz
           - os_name: Windows-x86_64
+            runner: ubuntu-latest
             target: x86_64-pc-windows-gnu
             bin: lsb2ynab.exe
-            archive: 7z a -tzip
+            archive_cmd: 7z a -tzip
             archive_ext: zip
+          - os_name: MacOS-x86_64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            bin: lsb2ynab
+            archive_cmd: tar -czf
+            archive_ext: tar.gz
+          - os_name: MacOS-aarch64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            bin: lsb2ynab
+            archive_cmd: tar -czf
+            archive_ext: tar.gz
     steps:
       - name: Determine version
         id: version
@@ -45,7 +59,7 @@ jobs:
       - name: Archive
         run: |
           mv target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
-          ${{ matrix.platform.archive }} lsb2ynab-${{ steps.version.outputs.tag }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }} ${{ matrix.platform.bin }}
+          ${{ matrix.platform.archive_cmd }} lsb2ynab-${{ steps.version.outputs.tag }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }} ${{ matrix.platform.bin }}
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
