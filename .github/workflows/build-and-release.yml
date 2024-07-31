@@ -1,6 +1,6 @@
 on: push
 
-name: Create Release
+name: Build And Release
 
 jobs:
   artifacts:
