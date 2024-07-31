@@ -1,6 +1,6 @@
 [package]
 name = "lsb2ynab"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "Convert CSV files exported from Lån & Spar Bank to YNAB compatible CSV files."
 
