@@ -36,7 +36,7 @@ impl<'de> Deserialize<'de> for DateValue {
 struct Row {
     date: DateValue,
     entry: String,
-    value: MonetaryValue,
+    amount: MonetaryValue,
     _running_total: String,
     _currency: String,
 }
@@ -50,7 +50,7 @@ impl Serialize for Row {
         s.serialize_field("Date", &self.date)?;
         s.serialize_field("Payee", &self.entry)?;
         s.serialize_field("Memo", "")?;
-        s.serialize_field("Amount", &self.value)?;
+        s.serialize_field("Amount", &self.amount)?;
         s.end()
     }
 }
