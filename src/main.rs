@@ -78,7 +78,7 @@ struct Args {
     /// Input file. If not provided, a file dialog will be shown.
     input: Option<PathBuf>,
 
-    /// Output file. If not provided, a file name will be generated and placed in the folder of the input file.
+    /// Output file. If not provided, a file dialog will be shown.
     #[arg(short, long)]
     output: Option<PathBuf>,
 }
@@ -95,14 +95,18 @@ fn main() {
         return;
     };
 
-    let reader = std::fs::File::open(&input_path).expect("Failed to open file for reading");
+    let reader = std::fs::File::open(input_path).expect("Failed to open file for reading");
 
-    let output_path = args.output.unwrap_or_else(|| {
-        input_path.with_file_name(format!(
-            "ynab {}.csv",
-            chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
-        ))
-    });
+    let Some(output_path) = args.output.or_else(|| {
+        FileDialog::new()
+            .set_file_name(format!(
+                "ynab-{}.csv",
+                chrono::Local::now().format("%Y-%m-%d-%H-%M-%S")
+            ))
+            .save_file()
+    }) else {
+        return;
+    };
 
     let writer = std::fs::File::create(output_path).expect("Failed to open file for writing");
 
