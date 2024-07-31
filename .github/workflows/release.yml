@@ -1,7 +1,4 @@
-on:
-  push:
-    tags:
-      - "v*"
+on: push
 
 name: Create Release
 
@@ -37,15 +34,8 @@ jobs:
             archive_cmd: tar -czf
             archive_ext: tar.gz
     steps:
-      - name: Determine version
-        id: version
-        run: printf "tag=%s\n" "${REF#refs\/tags\/}" >> "$GITHUB_OUTPUT"
-        env:
-          REF: ${{ github.ref }}
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.version.outputs.tag }}
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -53,18 +43,29 @@ jobs:
           target: ${{ matrix.platform.target }}
       - name: Build
         run: cargo build --release --target ${{ matrix.platform.target }}
+
+      - name: Determine version
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: version
+        run: printf "tag=%s\n" "${REF#refs\/tags\/}" >> "$GITHUB_OUTPUT"
+        env:
+          REF: ${{ github.ref }}
       - name: Archive
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mv target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
           ${{ matrix.platform.archive_cmd }} lsb2ynab-${{ steps.version.outputs.tag }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }} ${{ matrix.platform.bin }}
       - name: Upload artifact
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: lsb2ynab-${{ steps.version.outputs.tag }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }}
           path: lsb2ynab-${{ steps.version.outputs.tag }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }}
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: artifacts
     permissions:
       contents: write
