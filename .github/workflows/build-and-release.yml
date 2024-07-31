@@ -44,23 +44,17 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.platform.target }}
 
-      - name: Extract tag name
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: tag
-        uses: actions/github-script@v7
-        with:
-          script: return context.payload.ref.replace(/^refs\/tags\/v/, '');
       - name: Archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mv target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} .
-          ${{ matrix.platform.archive_cmd }} lsb2ynab-${{ steps.tag.outputs.result }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }} ${{ matrix.platform.bin }}
+          ${{ matrix.platform.archive_cmd }} lsb2ynab-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }} ${{ matrix.platform.bin }}
       - name: Upload artifact
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
-          name: lsb2ynab-${{ steps.tag.outputs.result }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }}
-          path: lsb2ynab-${{ steps.tag.outputs.result }}-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }}
+          name: lsb2ynab-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }}
+          path: lsb2ynab-${{matrix.platform.target}}.${{ matrix.platform.archive_ext }}
 
   release:
     name: Create Release
